@@ -1,10 +1,10 @@
 import sys
 from PySide6.QtWidgets import QApplication
-from flasher_window import FlasherWindow
+from uploader_window import UploaderWindow
 
 def main():
     app = QApplication(sys.argv)
-    win = FlasherWindow()
+    win = UploaderWindow()
     win.show()
     sys.exit(app.exec())
 
