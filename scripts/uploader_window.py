@@ -21,6 +21,7 @@ class UploaderWindow(QWidget):
         super().__init__(parent)
         self.ui = load_ui("../ui/firmware_uploader.ui")
 
+        self.flash_percent = 0
         self._power_hold_pin_state = 0
         self._boot0_pin_state = 0
         self._nrst_pin_state = 0
@@ -136,6 +137,9 @@ class UploaderWindow(QWidget):
         except Exception:
             self.ui.boot0_pin_val_label.setText("ERR")
 
+        if self.flash_percent == 100:
+            self._set_flash_status("Flash Done")
+
     def _set_comm_status(self, text: str):
         lbl = self.ui.comm_status_val_label
         lbl.setText(text)
@@ -143,6 +147,15 @@ class UploaderWindow(QWidget):
             lbl.setStyleSheet("color:#16a34a; font-weight:600;")
         else:
             lbl.setStyleSheet("color:#dc2626; font-weight:600;")
+
+    def _set_flash_status(self, text: str):
+        lbl = self.ui.flash_status_val_label
+        lbl.setText(text)
+        if text.lower().startswith("fla"):
+            lbl.setStyleSheet("color:#16a34a; font-weight:600;") 
+        else:
+            lbl.setStyleSheet("color:#000000; font-weight:600;") 
+
 
     @Slot()
     def _on_connect(self):
@@ -172,6 +185,7 @@ class UploaderWindow(QWidget):
             self._serial_thread.start()
 
         self._worker = SerialWorker(port=port_path, baud=115200, timeout=0.2)
+        self._worker.flash_prog.connect(self._on_flash_progress)
         self._worker.moveToThread(self._serial_thread)
         self._worker.cmd_done.connect(self._on_cmd_done, Qt.QueuedConnection)
 
@@ -208,6 +222,13 @@ class UploaderWindow(QWidget):
         label.setText(elided)
         label.setToolTip(text)
 
+    def _on_flash_progress(self, percent: int):
+        self.ui.flash_progress_bar.setRange(0, 100)
+        self.ui.flash_progress_bar.setValue(percent)
+        self.ui.flash_progress_bar.setFormat(f"{percent}%")
+        self.ui.flash_progress_bar.setTextVisible(True)
+        self.flash_percent = percent
+
     @Slot()
     def _on_flash(self):
         # 선택 경로 확인: label/lineedit 중 하나에서 가져오기
@@ -219,7 +240,7 @@ class UploaderWindow(QWidget):
         base_addr = 0x08000000
         erase_timeout_s = 20.0
         print(f"[Flash Button] bin={bin_path}, base=0x{base_addr:08X}, erase_to={erase_timeout_s}s")
-        self._set_comm_status("Flashing...")
+        self._set_flash_status("Flashing...")
 
         # flash_img(bytes,int,float) 호출
         self.request_flash_img.emit(bin_path.encode("utf-8"), base_addr, erase_timeout_s)

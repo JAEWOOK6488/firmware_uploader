@@ -9,6 +9,7 @@ CMD_WRITE     = b"\x31\xCE"
 
 class SerialWorker(QObject):
     cmd_done = Signal(bool, bytes)
+    flash_prog = Signal(int)
 
     def __init__(self, port: str, baud: int = 115200, timeout: float = 0.2):
         super().__init__()
@@ -166,7 +167,9 @@ class SerialWorker(QObject):
             for attempt in range(2):
                 if write_block(addr, block):
                     written += len(block); addr += len(block)
-                    print(f"[flash_img] Progress {written*100.0/total:5.1f}% ({written}/{total})")
+                    percent = int(written * 100.0 / total)
+                    self.flash_prog.emit(percent)
+                    print(f"[flash_img] Progress {percent:3d}% ({written}/{total})")
                     break
                 else:
                     print(f"[flash_img] WARN: retry @0x{addr:08X} (attempt {attempt+2}/2)")

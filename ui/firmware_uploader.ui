@@ -271,7 +271,7 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
          <item row="3" column="0">
-          <widget class="QProgressBar" name="progress_bar">
+          <widget class="QProgressBar" name="flash_progress_bar">
            <property name="font">
             <font>
              <pointsize>14</pointsize>
