@@ -4,6 +4,15 @@
   <img width="326" height="290" alt="Image" src="./docs/ui.png" />
 </p>
 
+
+### Install Dependencies
+```
+cd firmware_uploader/shell
+```
+```
+./install.sh
+```
+
 ### Quick Start
 ```
 cd firmware_uploader/shell
