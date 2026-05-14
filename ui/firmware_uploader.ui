@@ -62,7 +62,7 @@
            </font>
           </property>
           <property name="text">
-           <string>/dev/</string>
+           <string>/dev/ttyS0</string>
           </property>
          </widget>
         </item>

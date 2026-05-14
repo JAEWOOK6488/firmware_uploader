@@ -10,6 +10,9 @@ CMD_WRITE     = b"\x31\xCE"
 class SerialWorker(QObject):
     cmd_done = Signal(bool, bytes)
     flash_prog = Signal(int)
+    # ok=True: 전체 플래시 성공 (erase + write)
+    # ok=False: 단계 중 어디선가 실패 (msg에 사유)
+    flash_done = Signal(bool, str)
 
     def __init__(self, port: str, baud: int = 115200, timeout: float = 0.2):
         super().__init__()
@@ -104,15 +107,18 @@ class SerialWorker(QObject):
 
         print(f"[flash_img] start: bin='{bin_path}', base=0x{base_addr:08X}, erase_to={erase_timeout_s}s")
         if not os.path.isfile(bin_path):
-            print("[flash_img] ERROR: BIN file not found."); return
+            print("[flash_img] ERROR: BIN file not found.")
+            self.flash_done.emit(False, "BIN file not found"); return
         fw = open(bin_path, "rb").read()
         total = len(fw)
         if total == 0:
-            print("[flash_img] ERROR: BIN is empty."); return
+            print("[flash_img] ERROR: BIN is empty.")
+            self.flash_done.emit(False, "BIN is empty"); return
         print(f"[flash_img] BIN size = {total} bytes")
 
         if not self._open_port():
-            print("[flash_img] ERROR: cannot open port"); return
+            print("[flash_img] ERROR: cannot open port")
+            self.flash_done.emit(False, "cannot open port"); return
 
         # 기존 읽기 타임아웃이 너무 짧으면 조금 늘려줌
         old_timeout = self._ser.timeout
@@ -134,10 +140,12 @@ class SerialWorker(QObject):
             if not self._sync_now(5.0):
                 print("[flash_img] ERROR: Bootloader SYNC failed (no ACK).")
                 self._ser.timeout = old_timeout
+                self.flash_done.emit(False, "Bootloader SYNC failed (no ACK)")
                 return
             if not try_ext_erase():
                 print("[flash_img] ERROR: Erase NACK/timeout.")
                 self._ser.timeout = old_timeout
+                self.flash_done.emit(False, "Erase NACK/timeout")
                 return
 
         print("[flash_img] Erase OK")
@@ -177,7 +185,9 @@ class SerialWorker(QObject):
             else:
                 print(f"[flash_img] ERROR: write block failed @0x{addr:08X}")
                 self._ser.timeout = old_timeout
+                self.flash_done.emit(False, f"write block failed @0x{addr:08X}")
                 return
 
         self._ser.timeout = old_timeout
         print("[flash_img] Write OK (erase+flash complete)")
+        self.flash_done.emit(True, "")
