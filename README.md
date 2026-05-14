@@ -37,3 +37,11 @@ cd firmware_uploader/shell
 ```
 ./run_script.sh --headless --port /dev/ttyS0
 ```
+
+### 기본 핀 설정
+
+| 신호 | SoC 핀 | 역할 |
+|------|--------|------|
+| `FW_UPDATE` | GPIO4_C5 | PMIC keep-alive (전원 유지) |
+| `BOOT_CTRL` | GPIO4_C6 | STM32 BOOT0 (HIGH → 부트로더 진입) |
+| `NRST_CTRL` | GPIO0_A0 | STM32 NRST 리셋 |
